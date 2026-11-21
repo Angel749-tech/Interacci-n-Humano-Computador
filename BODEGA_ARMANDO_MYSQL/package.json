@@ -1,0 +1,18 @@
+{
+  "name": "bodega-armando-sistema-final",
+  "version": "2.1.0",
+  "private": true,
+  "description": "Bodega Armando: frontend HTML5/Bootstrap 5.3.8, panel administrativo, dashboards PC12 y backend MySQL 8",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "iniciar": "node --env-file=.env sistema/servidor.js",
+    "crear-cuentas": "node --env-file=.env utilidades/crear_cuentas_equipo.js",
+    "revisar": "node --check sistema/db.js && node --check sistema/servidor.js && node --check sistema/script.js && node --check utilidades/crear_cuentas_equipo.js",
+    "pruebas": "node --test utilidades/prueba_reglas.js"
+  },
+  "dependencies": {
+    "mysql2": "^3.15.3"
+  }
+}

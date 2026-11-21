@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Sistema web de ventas, productos e inventario de la Bodega Armando.">
+  <title>Bodega Armando | Sistema de ventas e inventario</title>
+
+  <!-- Bootstrap 5.3.8: componentes, botones, tablas y columnas adaptables. -->
+  <link rel="stylesheet" href="bootstrap/css/bootstrap.min.css">
+  <!-- Estilos propios de la Bodega Armando: colores e identidad visual. -->
+  <link rel="stylesheet" href="estilos.css">
+  <script src="bootstrap/js/bootstrap.bundle.min.js" defer></script>
+  <!-- JavaScript: eventos, validaciones, carrito y conexión a MySQL por medio del servidor. -->
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <!-- 1. ESTRUCTURA PRINCIPAL DE LA PÁGINA (Semana 11: header, nav, main, footer) -->
+  <a class="saltar" href="#contenido">Saltar al contenido</a>
+  <header class="cabecera">
+    <div class="marca">
+      <span class="marca-icono" aria-hidden="true">▣</span>
+      <span><small>BODEGA</small><strong>Armando Tornero</strong></span>
+    </div>
+    <nav class="navegacion-superior" aria-label="Áreas del sistema">
+      <button type="button" class="boton-tab" data-area="cliente">Tienda para clientes</button>
+      <button type="button" class="boton-tab" data-area="personal">Panel del personal</button>
+    </nav>
+    <button type="button" class="boton-icono" id="boton-tema" title="Cambiar modo claro u oscuro" aria-label="Cambiar modo claro u oscuro">☾</button>
+  </header>
+
+  <!-- JavaScript muestra aquí la vista escogida, tomando sus estructuras de las plantillas HTML siguientes. -->
+  <main id="contenido" tabindex="-1"></main>
+  <footer class="pie">Bodega Armando · Comas, Lima · 2026</footer>
+  <div id="mensaje" class="mensaje" role="status" aria-live="polite"></div>
+
+  <!-- Formulario reutilizable para crear/editar registros. -->
+  <dialog id="dialogo" aria-labelledby="titulo-dialogo">
+    <form id="formulario-dialogo" method="dialog">
+      <div class="modal-encabezado">
+        <h2 id="titulo-dialogo">Operación</h2>
+        <button type="button" class="boton-icono" data-accion="cerrar-dialogo" aria-label="Cerrar">✕</button>
+      </div>
+      <div id="contenido-dialogo"></div>
+      <div class="modal-acciones">
+        <button type="button" class="btn btn-outline-secondary boton secundario" data-accion="cerrar-dialogo">Cancelar</button>
+        <button type="submit" class="btn btn-primary boton primario" id="confirmar-dialogo">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- 2. PLANTILLAS HTML: la estructura de cada pantalla está aquí. -->
+  <!-- Los textos {{CAMPO}} se rellenan mediante funciones de script.js. -->
+
+  <template id="tpl-encabezado">
+    <div class="encabezado-pagina">
+      <div>
+        <div class="titulo-sobrelinea">Bodega Armando / {{AREA}}</div>
+        <h1>{{TITULO}}</h1>
+        <p>{{DESCRIPCION}}</p>
+      </div>
+      {{ACCIONES}}
+    </div>
+  </template>
+
+  <!-- TIENDA DEL CLIENTE -->
+  <template id="tpl-cliente">
+    <div class="pagina-cliente contenedor">
+      <section class="hero">
+        <div>
+          <div class="titulo-sobrelinea" style="color:#b9d6ff">TU BODEGA, MÁS CERCA</div>
+          <h1>Productos de todos los días, en un solo lugar.</h1>
+          <p>Arma tu carrito, registra el pago externo y recoge tus productos con tu constancia interna.</p>
+        </div>
+        <div class="hero-productos" aria-hidden="true">{{FOTOS}}</div>
+      </section>
+      <nav class="cliente-tabs" aria-label="Menú del cliente">
+        <button type="button" class="btn btn-outline-primary boton {{ACT_CATALOGO}}" data-vista-cliente="catalogo">Catálogo</button>
+        <button type="button" class="btn btn-outline-primary boton {{ACT_CARRITO}}" data-vista-cliente="carrito">Mi carrito ({{CANTIDAD}})</button>
+        <button type="button" class="btn btn-outline-primary boton {{ACT_HISTORIAL}}" data-vista-cliente="historial">Mis compras</button>
+        <button type="button" class="btn btn-outline-primary boton {{ACT_CUENTA}}" data-vista-cliente="cuenta">{{TEXTO_CUENTA}}</button>
+        {{BOTON_SALIR}}
+      </nav>
+      {{CONTENIDO}}
+    </div>
+  </template>
+
+  <template id="tpl-catalogo">
+    {{ENCABEZADO}}
+    <form class="filtros" data-form="buscar-cliente">
+      <label class="campo"><span>Buscar producto</span>
+        <input class="form-control" name="q" value="{{BUSQUEDA}}" placeholder="Ej. arroz, leche o código" autocomplete="off">
+      </label>
+      <label class="campo"><span>Categoría</span>
+        <select class="form-select" name="categoria"><!--{{CATEGORIAS}}--></select>
+      </label>
+      <button class="btn btn-primary boton primario" type="submit">Buscar</button>
+    </form>
+    <section class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-3" aria-label="Lista de productos">
+      {{PRODUCTOS}}
+    </section>
+  </template>
+
+  <template id="tpl-resumen-compra">
+    <section class="tarjeta card">
+      <h2>Resumen de compra</h2>
+      <div class="fila-dato"><span>Subtotal</span><strong>{{SUBTOTAL}}</strong></div>
+      <div class="fila-dato"><span>Descuento</span><span>S/ 0.00</span></div>
+      <hr class="separador">
+      <div class="fila-dato"><strong>Total a pagar</strong><strong class="monto">{{SUBTOTAL}}</strong></div>
+      <form data-form="{{TIPO_FORMULARIO}}">
+        <label class="campo"><span>{{ETIQUETA_PAGO}}</span>
+          <select class="form-select" name="pago">
+            {{OPCIONES_PAGO}}
+          </select>
+        </label>
+        {{CAMPO_REFERENCIA}}
+        {{CAMPO_RECIBIDO}}
+        <button class="btn btn-primary boton primario w-100" type="submit" {{DESHABILITADO}}>{{TEXTO_BOTON}}</button>
+      </form>
+    </section>
+  </template>
+
+  <template id="tpl-carrito">
+    {{ENCABEZADO}}
+    <div class="carrito-grilla">
+      <section class="tarjeta card">
+        <h2>Productos seleccionados</h2>
+        {{ITEMS}}
+        {{VACIAR}}
+      </section>
+      {{RESUMEN}}
+    </div>
+  </template>
+
+  <template id="tpl-historial-invitado">
+    {{ENCABEZADO}}
+    <section class="tarjeta card">
+      <p>Necesitas iniciar sesión para ver tus compras.</p>
+      <button class="btn btn-primary boton primario" data-vista-cliente="cuenta">Ingresar</button>
+    </section>
+  </template>
+
+  <template id="tpl-historial">
+    {{ENCABEZADO}}
+    <section class="tarjeta card tabla-scroll">
+      <table class="table table-striped table-hover tabla">
+        <thead><tr><th>Comprobante</th><th>Fecha</th><th>Pago</th><th>Productos</th><th>Total</th><th>Acción</th></tr></thead>
+        <tbody><!--{{FILAS}}--></tbody>
+      </table>
+    </section>
+  </template>
+
+  <template id="tpl-cuenta-cliente">
+    {{ENCABEZADO}}
+    <section class="tarjeta card">
+      <h2>{{NOMBRE}}</h2>
+      <p>Usuario: <strong>{{USUARIO}}</strong></p>
+      <p>Tus pedidos están asociados a tu cuenta.</p>
+      <button class="btn btn-outline-primary boton" data-accion="salir">Cerrar sesión</button>
+    </section>
+  </template>
+
+  <template id="tpl-cuenta-registro">
+    {{ENCABEZADO}}
+    <div class="row g-3">
+      <div class="col-12 col-lg-6">
+        <section class="tarjeta card h-100">
+          <h2>Iniciar sesión</h2>
+          <form data-form="login-cliente">
+            <label class="campo"><span>Usuario</span><input class="form-control" name="usuario" required autocomplete="username" placeholder="Tu usuario"></label>
+            <label class="campo"><span>Contraseña</span><input class="form-control" type="password" name="clave" required autocomplete="current-password"></label>
+            <button class="btn btn-primary boton primario" type="submit">Ingresar a mi cuenta</button>
+          </form>
+        </section>
+      </div>
+      <div class="col-12 col-lg-6">
+        <section class="tarjeta card h-100">
+          <h2>Crear cuenta</h2>
+          <form data-form="registro-cliente">
+            <label class="campo"><span>Nombre completo</span><input class="form-control" name="nombre" minlength="3" maxlength="60" required></label>
+            <label class="campo"><span>Usuario nuevo</span><input class="form-control" name="usuario" minlength="4" maxlength="30" pattern="[a-zA-Z0-9._-]+" required></label>
+            <label class="campo"><span>Contraseña (mínimo 8 caracteres)</span><input class="form-control" name="clave" type="password" minlength="8" autocomplete="new-password" required></label>
+            <button class="btn btn-primary boton primario" type="submit">Crear cuenta</button>
+          </form>
+        </section>
+      </div>
+    </div>
+  </template>
+
+  <!-- PANEL DEL PERSONAL -->
+  <template id="tpl-acceso-personal">
+    <div class="acceso-grid">
+      <section class="acceso-izquierda">
+        <div><div class="titulo-sobrelinea" style="color:#a6c8fd">BODEGA ARMANDO</div>
+          <h1>Tu bodega, en orden.</h1>
+          <p>Sistema web para la gestión de ventas e inventario. Acceso del personal.</p>
+        </div>
+        <ul><li>Productos e inventario</li><li>Ventas y comprobantes</li><li>Caja y reportes</li></ul>
+        <p class="muted">Las opciones se muestran según los permisos de cada rol.</p>
+      </section>
+      <section class="acceso-derecha">
+        <div class="titulo-sobrelinea">ACCESO AL SISTEMA</div><h1>Iniciar sesión</h1>
+        <p class="muted">Ingresa con tus credenciales para acceder al panel.</p>
+        <form data-form="login-personal">
+          <label class="campo"><span>Usuario</span><input class="form-control" name="usuario" required autocomplete="username" placeholder="Nombre de usuario"></label>
+          <label class="campo"><span>Contraseña</span><input class="form-control" type="password" name="clave" required autocomplete="current-password" placeholder="Contraseña"></label>
+          <button class="btn btn-primary boton primario" type="submit">Ingresar al sistema</button>
+        </form>
+      </section>
+    </div>
+  </template>
+
+  <template id="tpl-personal">
+    <div class="interno">
+      <aside class="barra-lateral">
+        <div class="subtitulo">ESPACIO DE TRABAJO</div>
+        <nav aria-label="Módulos del personal">
+          <button type="button" data-vista-personal="panel">▦ Panel principal</button>
+          <button type="button" data-vista-personal="productos">▤ Productos</button>
+          <button type="button" data-vista-personal="proveedores">♧ Proveedores</button>
+          <button type="button" data-vista-personal="inventario">↕ Inventario</button>
+          <button type="button" data-vista-personal="ventas">▣ Registro de ventas</button>
+          <button type="button" data-vista-personal="comprobantes">▣ Comprobantes</button>
+          <button type="button" data-vista-personal="caja">▣ Cierre de caja</button>
+          <button type="button" data-vista-personal="usuarios">♙ Usuarios</button>
+          <button type="button" data-vista-personal="reportes">▥ Reportes</button>
+        </nav>
+        <div class="perfil"><strong>Acceso: {{ROL}}</strong><div>{{NOMBRE}}</div>
+          <button type="button" data-accion="salir">↪ Cerrar sesión</button>
+        </div>
+      </aside>
+      <div class="principal-interno">{{CONTENIDO}}</div>
+    </div>
+  </template>
+
+  <template id="tpl-productos">
+    {{ENCABEZADO}}
+    <section class="tarjeta card">
+      <form class="filtros" data-form="buscar-admin">
+        <label class="campo"><span>Buscar por nombre o código</span><input class="form-control" name="q" value="{{BUSQUEDA}}" placeholder="Buscar producto"></label>
+        <label class="campo"><span>Categoría</span><select class="form-select" name="categoria"><!--{{CATEGORIAS}}--></select></label>
+        <button class="btn btn-outline-primary boton" type="submit">Filtrar</button>
+        <label class="campo"><span>Estado</span><select class="form-select" name="estado"><!--{{ESTADOS}}--></select></label>
+      </form>
+      <div class="tabla-scroll">
+        <table class="table table-striped table-hover tabla">
+          <thead><tr><th>Código</th><th>Producto</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody><!--{{FILAS}}--></tbody>
+        </table>
+      </div>
+    </section>
+  </template>
+
+  <template id="tpl-proveedores">
+    {{ENCABEZADO}}
+    <section class="tarjeta card tabla-scroll">
+      <table class="table table-striped table-hover tabla">
+        <thead><tr><th>Empresa</th><th>RUC</th><th>Contacto</th><th>Teléfono</th><th>Acciones</th></tr></thead>
+        <tbody><!--{{FILAS}}--></tbody>
+      </table>
+    </section>
+  </template>
+
+  <template id="tpl-inventario">
+    {{ENCABEZADO}}
+    {{ALERTA}}
+    <div class="row g-3">
+      <div class="col-12 col-lg-6">
+        <section class="tarjeta card h-100"><h2>Existencias por producto</h2>
+          <div class="tabla-scroll"><table class="table table-striped tabla"><thead><tr><th>Producto</th><th>Stock</th><th>Mínimo</th><th>Estado</th></tr></thead><tbody><!--{{FILAS_STOCK}}--></tbody></table></div>
+        </section>
+      </div>
+      <div class="col-12 col-lg-6">
+        <section class="tarjeta card h-100"><h2>Movimientos de inventario</h2>
+          <div class="tabla-scroll"><table class="table table-striped tabla"><thead><tr><th>Fecha</th><th>Producto</th><th>Tipo</th><th>Cantidad</th></tr></thead><tbody><!--{{FILAS_MOVIMIENTOS}}--></tbody></table></div>
+        </section>
+      </div>
+    </div>
+  </template>
+
+  <template id="tpl-ventas">
+    {{ENCABEZADO}}
+    <div class="carrito-grilla">
+      <div>
+        <section class="tarjeta card">
+          <h2>Seleccionar productos</h2>
+          <label class="campo"><span>Producto disponible</span>
+            <select class="form-select" id="seleccionar-pos"><option value="">Selecciona un producto</option><!--{{OPCIONES}}--></select>
+          </label>
+          <button type="button" class="btn btn-primary boton primario" data-accion="agregar-pos">+ Agregar a la venta</button>
+        </section>
+        <section class="tarjeta card margen-superior"><h2>Detalle de la venta</h2>{{ITEMS}}</section>
+      </div>
+      <div class="resumen-venta">{{RESUMEN}}{{AVISO_CAJA}}</div>
+    </div>
+  </template>
+
+  <template id="tpl-comprobantes">
+    {{ENCABEZADO}}
+    <section class="tarjeta card tabla-scroll">
+      <table class="table table-striped table-hover tabla">
+        <thead><tr><th>Número</th><th>Fecha</th><th>Origen</th><th>Responsable</th><th>Forma de pago</th><th>Total</th><th>Acción</th></tr></thead>
+        <tbody><!--{{FILAS}}--></tbody>
+      </table>
+    </section>
+  </template>
+
+  <template id="tpl-usuarios">
+    {{ENCABEZADO}}
+    <section class="tarjeta card">
+      <h2>Usuarios del sistema</h2>
+      <div class="tabla-scroll">
+        <table class="table table-striped tabla"><thead><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Estado</th><th>Acción</th></tr></thead><tbody><!--{{FILAS}}--></tbody></table>
+      </div>
+    </section>
+    <div class="row row-cols-1 row-cols-md-3 g-3 margen-superior">
+      <div class="col"><section class="tarjeta card h-100"><h3>Administrador</h3><p class="datos-muestra">Productos, usuarios, inventario, ventas, caja y reportes</p></section></div>
+      <div class="col"><section class="tarjeta card h-100"><h3>Almacenero</h3><p class="datos-muestra">Productos, proveedores y movimientos de inventario</p></section></div>
+      <div class="col"><section class="tarjeta card h-100"><h3>Cajero</h3><p class="datos-muestra">Registro de ventas, comprobantes y caja</p></section></div>
+    </div>
+  </template>
+
+  <template id="tpl-caja">
+    {{ENCABEZADO}}
+    <div class="row row-cols-1 row-cols-md-3 g-3">
+      <div class="col"><section class="tarjeta card kpi h-100"><small>Saldo inicial</small><strong>{{SALDO}}</strong></section></div>
+      <div class="col"><section class="tarjeta card kpi h-100"><small>Ventas registradas en POS</small><strong>{{VENTAS}}</strong></section></div>
+      <div class="col"><section class="tarjeta card kpi h-100"><small>Efectivo esperado</small><strong>{{ESPERADO}}</strong></section></div>
+    </div>
+    <div class="row g-3 margen-superior">
+      <div class="col-12 col-lg-6"><section class="tarjeta card h-100"><h2>Ventas por forma de pago</h2>{{PAGOS}}<hr class="separador"><div class="fila-dato"><strong>Total ({{N_VENTAS}} ventas)</strong><strong>{{VENTAS}}</strong></div></section></div>
+      <div class="col-12 col-lg-6"><section class="tarjeta card h-100"><h2>Arqueo y cierre</h2>{{FORMULARIO_CIERRE}}</section></div>
+    </div>
+    {{HISTORIAL}}
+  </template>
+
+  <template id="tpl-form-cerrar-caja">
+    <form data-form="cerrar-caja">
+      <label class="campo"><span>Efectivo contado (S/)</span><input class="form-control" name="contado" type="number" min="0" step="0.01" value="{{ESPERADO}}" required></label>
+      <label class="campo"><span>Observaciones (opcional)</span><textarea class="form-control" name="nota" rows="2" maxlength="150" placeholder="Sin observaciones"></textarea></label>
+      <div class="notice">Se calculará la diferencia entre el efectivo contado y el esperado.</div>
+      <button class="btn btn-primary boton primario" type="submit">Cerrar caja</button>
+    </form>
+  </template>
+  <template id="tpl-caja-cerrada">
+    <p><span class="etiqueta">Caja cerrada</span></p>
+    <p>Esta caja ya fue cerrada. Puedes abrir una nueva para continuar las ventas.</p>
+    <button class="btn btn-primary boton primario" data-accion="abrir-caja">Abrir nueva caja</button>
+  </template>
+  <template id="tpl-historial-cierres">
+    <section class="tarjeta card margen-superior"><h2>Historial de cierres</h2>
+      <div class="tabla-scroll"><table class="table table-striped tabla"><thead><tr><th>Caja</th><th>Fecha</th><th>Esperado</th><th>Contado</th><th>Diferencia</th></tr></thead><tbody><!--{{FILAS}}--></tbody></table></div>
+    </section>
+  </template>
+
+  <template id="tpl-reportes">
+    {{ENCABEZADO}}
+    <form class="tarjeta card" data-form="filtrar-reporte">
+      <div class="row g-3 align-items-end">
+        <div class="col-12 col-md-4"><label class="campo"><span>Desde</span><input class="form-control" type="date" name="desde" value="{{DESDE}}"></label></div>
+        <div class="col-12 col-md-4"><label class="campo"><span>Hasta</span><input class="form-control" type="date" name="hasta" value="{{HASTA}}"></label></div>
+        <div class="col-12 col-md-4"><button class="btn btn-outline-primary boton" type="submit">Aplicar filtros</button></div>
+      </div>
+    </form>
+    <div class="row row-cols-1 row-cols-md-3 g-3 margen-superior">
+      <div class="col"><article class="tarjeta card kpi h-100"><small>Ventas registradas</small><strong>{{TOTAL}}</strong></article></div>
+      <div class="col"><article class="tarjeta card kpi h-100"><small>Número de ventas</small><strong>{{N_VENTAS}}</strong></article></div>
+      <div class="col"><article class="tarjeta card kpi h-100"><small>Unidades vendidas</small><strong>{{UNIDADES}}</strong></article></div>
+    </div>
+    <div class="row g-3 margen-superior">
+      <div class="col-12 col-lg-6"><section class="tarjeta card h-100"><h2>Productos con mayor demanda</h2>
+        <div id="grafico-ranking" class="grafico-barras" role="img" aria-label="Gráfico de unidades vendidas por producto"></div>
+        {{RANKING}}
+      </section></div>
+      <div class="col-12 col-lg-6"><section class="tarjeta card h-100"><h2>Formas de pago</h2>{{PAGOS}}</section></div>
+    </div>
+  </template>
+
+  <!-- DASHBOARD PC12: conservamos su estructura y sus identificadores para los gráficos. -->
+  <template id="tpl-dashboard">
+    {{ENCABEZADO}}
+    <section class="tarjeta card controles-dashboard" aria-label="Opciones del dashboard">
+      <div><h2>Resumen de gestión</h2><p class="datos-muestra">Ventas, stock, medios de pago y actividad comercial</p></div>
+      <label class="campo"><span>Período de ventas</span>
+        <select class="form-select" id="dashboard-periodo" aria-label="Período del dashboard">
+          <option value="todo" {{SEL_TODO}}>Todo el historial</option>
+          <option value="hoy" {{SEL_HOY}}>Hoy</option>
+          <option value="semana" {{SEL_SEMANA}}>Últimos 7 días</option>
+          <option value="mes" {{SEL_MES}}>Últimos 30 días</option>
+        </select>
+      </label>
+    </section>
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-3 margen-superior">
+      <div class="col"><article class="tarjeta card kpi kpi-dashboard h-100"><small>Ingresos por ventas</small><strong>{{TOTAL}}</strong><span class="detalle">{{N_VENTAS}} operaciones</span></article></div>
+      <div class="col"><article class="tarjeta card kpi kpi-dashboard h-100"><small>Unidades vendidas</small><strong>{{UNIDADES}}</strong><span class="detalle">Productos vendidos en el período</span></article></div>
+      <div class="col"><article class="tarjeta card kpi kpi-dashboard h-100"><small>Productos activos</small><strong>{{PRODUCTOS}}</strong><span class="detalle">{{N_CATEGORIAS}} categorías registradas</span></article></div>
+      <div class="col"><article class="tarjeta card kpi kpi-dashboard h-100"><small>Stock bajo</small><strong>{{BAJO}}</strong><span class="detalle">Caja {{NUM_CAJA}}: {{ESTADO_CAJA}}</span></article></div>
+    </div>
+    <div class="row g-3 margen-superior cuadros-dashboard">
+      <div class="col-12 col-lg-6"><section class="tarjeta card h-100"><div class="cabecera-grafico"><h2>Ventas por día</h2><span class="leyenda-grafico">Soles (S/)</span></div><div id="grafico-ventas-dias" class="grafico-barras" role="img" aria-label="Gráfico de barras con el monto de ventas por fecha"></div></section></div>
+      <div class="col-12 col-lg-6"><section class="tarjeta card h-100"><div class="cabecera-grafico"><h2>Formas de pago</h2><span class="leyenda-grafico">Distribución de ingresos</span></div><div class="grafico-circular-distribucion"><svg id="grafico-pagos" viewBox="0 0 220 220" role="img" aria-label="Gráfico circular de ingresos por forma de pago"></svg><div id="leyenda-pagos" class="leyenda-pagos"></div></div></section></div>
+      <div class="col-12 col-lg-6"><section class="tarjeta card h-100"><div class="cabecera-grafico"><h2>Stock por categoría</h2><span class="leyenda-grafico">Unidades disponibles</span></div><div id="grafico-stock" class="grafico-barras" role="img" aria-label="Gráfico de barras con unidades en inventario por categoría"></div></section></div>
+      <div class="col-12 col-lg-6"><section class="tarjeta card h-100"><div class="cabecera-grafico"><h2>Alertas de inventario</h2><span class="leyenda-grafico">Umbral mínimo</span></div><div class="listado-alertas">{{ALERTAS}}</div><p class="datos-muestra">Los gráficos se recalculan al registrar ventas o movimientos de inventario.</p></section></div>
+    </div>
+    <section class="tarjeta card margen-superior">
+      <div class="fila"><h2>Últimas ventas</h2><button type="button" class="enlace" data-vista-personal="reportes">Ver reportes</button></div>
+      <div class="tabla-scroll"><table class="table table-striped tabla"><thead><tr><th>Comprobante</th><th>Fecha</th><th>Responsable</th><th>Pago</th><th>Total</th></tr></thead><tbody><!--{{ULTIMAS}}--></tbody></table></div>
+    </section>
+  </template>
+</body>
+</html>
